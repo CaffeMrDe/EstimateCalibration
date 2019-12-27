@@ -324,66 +324,81 @@ int main(){
 
 
 /*********************************************/
-    Eigen::Matrix4d A_compute[17];
-    Eigen::Matrix4d A[17];
-
-    Eigen::Matrix3d A_compute_rotation[17];
-    Eigen::Matrix3d A_rotation[17];
-    Eigen::Vector3d A_compute_translation[17];
-    Eigen::Vector3d A_translation[17];
-    double ERROR_r;
-    double ERROR_t;
 
 
+    // C2O_list
+    // C2O_inv_list
+    // E2C
+    // W2E_list
+    // error compute
+    // ObjInBase
+    Eigen::Matrix4d ObjInBase[17], ObjInBaseMean;
+    Eigen::Vector3d TransObj[17], RotationObj[17];
+    for(int i = 0; i < 18; i++)
+    {
+        Eigen::Matrix4d temp = W2E_list[i]* E2C*C2O_list[i];
+        ObjInBase[i] << temp;
+//        std::cout << "ObjInBase: "<<std::endl<<temp<<std::endl;
+        Eigen::Matrix3d rotation;
+        rotation <<temp.block(0,0,3,3);
+        Eigen::Vector3d ea1 = rotation.eulerAngles(2,1,0);
+        RotationObj[i] << ea1;
 
-    //error compute
-    for(int j=0;j<17;j++){
-        Eigen::Matrix4d A_com = E2C*C2O_list[j+1]*C2O_inv_list[j]*E2Cinv;
-        A_compute[j] << A_com;
-        A_compute_rotation[j]<<A_com.block(0,0,3,3);
-        Eigen::Vector4d A_co = A_com.col(3);
-        A_compute_translation[j] << A_co.head(3);
-
-
-        Eigen::Matrix4d A1 = W2E_list[j+1]*W2E_inv_list[j];
-        A[j] << A1;
-        A_rotation[j]<<A1.block(0,0,3,3);
-        Eigen::Vector4d A_c = A1.col(3);
-        A_translation[j] << A_c.head(3);
-
-
-        Eigen::Matrix3d error_rotation =A_rotation[j] - A_compute_rotation[j];
-        double e_r=pow(error_rotation.norm(),2);
-        ERROR_r = ERROR_r + e_r;
-
-        Eigen::Vector3d error_translation =A_translation[j] - A_compute_translation[j];
-        double e_t=pow(error_translation.norm(),2)/pow(A_translation[j].norm(),2);
-        ERROR_t = ERROR_t + e_t;
-
-//        back_list[j] = forward_list[j+1]*C2O_list[j]*C2O_inv_list[j]*E2Cinv;
-
-//        std::cout<<"*-------XB---------*-*-*-*-*-*-*-*-"<<std::endl;
-//        std::cout << XB_compute[j]<<std::endl;
-//        std::cout<<"*-------AX---------*-*-*-*-*-*-*-*-"<<std::endl;
-//        std::cout << A[j]<<std::endl;
-
-
-//        std::cout<<"*-------C2O-1---------*-*-*-*-*-*-*-*-"<<std::endl;
-//        std::cout << C2O_inv_list[j]<<std::endl;
-//        std::cout<<"*-------E2C---------*-*-*-*-*-*-*-*-"<<std::endl;
-//        std::cout << E2Cinv<<std::endl;
-
-//        std::cout<<"*-------W2E---------*-*-*-*-*-*-*-*-"<<std::endl;
-//        std::cout << W2E_list[j]<<std::endl;
-//        std::cout<<"*-------back---------*-*-*-*-*-*-*-*-"<<std::endl;
-//        std::cout << back_list[j]<<std::endl;
-//        std::cout<<"*-------error---------*-*-*-*-*-*-*-*-"<<std::endl;
-//        Eigen::Matrix4d error=W2E_list[j] - back_list[j];
-//        std::cout << error<<std::endl;
-//        std::cout<<"*----------------*-*-*-*-*-*-*-*-"<<std::endl;
+        Eigen::Vector4d A_c = temp.col(3);
+        TransObj[i] << A_c.head(3);
+        std::cout <<"i: "<< i<<std::endl;
+        std::cout << "TransObj[i]: "<<std::endl<<TransObj[i]<<std::endl;
+        std::cout << "RotationObj[i]: "<<std::endl<<RotationObj[i]*180/3.1415<<std::endl;
+//        getwchar();
     }
-    double e =sqrt(ERROR_r/17);
-    std::cout<<e<<std::endl;
-    double et =sqrt(ERROR_t/17);
-    std::cout<<et<<std::endl;
+
+    Eigen::Vector3d TransObjSum, RotationSum;
+    TransObjSum.setZero();
+    RotationSum.setZero();
+    for(int i= 0; i< 18;i++)
+    {
+        TransObjSum += TransObj[i];
+        RotationSum += RotationObj[i]; //sum eular
+    }
+
+    Eigen::Vector3d TransObjMean, RotationMean;
+    TransObjMean = TransObjSum/18;
+    RotationMean = (RotationSum/18)*3.1415/180 ;
+
+    std::cout << "TransObjMean "<<std::endl<<TransObjMean<<std::endl;
+    std::cout << "RotationMean: "<<std::endl<<RotationMean<<std::endl;
+
+
+    Eigen::AngleAxisd rollAngle(Eigen::AngleAxisd(RotationMean(2),Eigen::Vector3d::UnitX()));
+    Eigen::AngleAxisd pitchAngle(Eigen::AngleAxisd(RotationMean(1),Eigen::Vector3d::UnitY()));
+    Eigen::AngleAxisd yawAngle(Eigen::AngleAxisd(RotationMean(0),Eigen::Vector3d::UnitZ()));
+
+    Eigen::Matrix3d RotationMeanmatrix;
+    RotationMeanmatrix=yawAngle*pitchAngle*rollAngle;
+    // merge
+    Eigen::Matrix4d  ObjInEndM;
+    ObjInEndM << ( Eigen::Matrix3d() << RotationMeanmatrix).finished(),
+            (Eigen::Vector3d() << TransObjMean).finished(),
+            Eigen::MatrixXd::Zero(1,3),
+            Eigen::MatrixXd::Identity(1,1);
+
+    std::cout << "ObjInEndM: "<<std::endl<<ObjInEndM<<std::endl;
+    // C2O_list[j]
+    Eigen::Matrix4d EstimeObjInCamera[17];
+    for(int j = 0;j < 17; j++){
+        //A = XB XInv
+        Eigen::Matrix4d A = W2E_list[j] *E2C;
+
+
+        EstimeObjInCamera[j] = ObjInEndM *A.inverse();
+        std::cout << "A "<<std::endl<<C2O_list[j]<<std::endl;
+        std::cout << "EstimeObjInCamera "<<std::endl<<EstimeObjInCamera[j]<<std::endl;
+        std::cout << "C2O "<<std::endl<<C2O_list[j]<<std::endl;
+
+        getwchar();
+    }
+//    double e =sqrt(ERROR_r/17);
+//    std::cout<<e<<std::endl;
+//    double et =sqrt(ERROR_t/17);
+//    std::cout<<et<<std::endl;
 }
