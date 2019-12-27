@@ -1,3 +1,0 @@
-/home/de/eigenWork/build/CMakeFiles/edit_cache.dir
-/home/de/eigenWork/build/CMakeFiles/rebuild_cache.dir
-/home/de/eigenWork/build/CMakeFiles/AFFIEN.dir

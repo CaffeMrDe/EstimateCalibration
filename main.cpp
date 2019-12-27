@@ -1,10 +1,22 @@
 #include <iostream>
-
+#include <opencv2/core.hpp>
 #include <Eigen/Dense>
 using namespace std;
  
 using namespace Eigen;
+//  PicX =[1490.168, 1499.325,2422.182, ...
+//         2417.885,2404.690, 1479.835,...
+//         552.398,560.731,570.021];
+// PicY =[1067.822, 451.513,450.673,...
+//         1069.607,1685.788, 1683.532,...
+//         1680.473,1066.009,450.147];
 
+// RobotX =[205.295, 205.295, 220.295,...
+//           220.295, 220.295, 205.295,...
+//           190.295, 190.295,190.295];
+// RobotY =[133.873, 143.873, 143.873, ...
+//           133.873, 123.873, 123.873, ...
+//           123.873, 133.873, 143.873];
 Eigen::MatrixXd pinv(Eigen::MatrixXd  A)
 {
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);//M=USV*
@@ -29,19 +41,7 @@ Eigen::MatrixXd pinv(Eigen::MatrixXd  A)
     return X;
 
 }
-//  PicX =[1490.168, 1499.325,2422.182, ...
-//         2417.885,2404.690, 1479.835,...
-//         552.398,560.731,570.021];
-// PicY =[1067.822, 451.513,450.673,...
-//         1069.607,1685.788, 1683.532,...
-//         1680.473,1066.009,450.147];
 
-// RobotX =[205.295, 205.295, 220.295,...
-//           220.295, 220.295, 205.295,...
-//           190.295, 190.295,190.295];
-// RobotY =[133.873, 143.873, 143.873, ...
-//           133.873, 123.873, 123.873, ...
-//           123.873, 133.873, 143.873];
 int main()
 {
  
@@ -54,7 +54,9 @@ int main()
     A(0,3) = 2417.885;A(1,3) = 1069.607;
     A(0,4) = 2404.690;A(1,4) = 1685.788;
     A(0,5) = 1479.835;A(1,5) = 1683.532;
-    // A(0,3) = 1;A(1,3) = 1;A(2,3) = 1;
+
+    A(2,0) = 1;A(2,1) = 1;A(2,2) = 1;
+    A(2,3) = 1;A(2,4) = 1;A(2,5) = 1;
     std::cout << "Here is the matrix A:\n" << A << std::endl;
  
     // VectorXf b = VectorXf::Random(3，2);
@@ -65,40 +67,23 @@ int main()
     b(0,3) = 220.295;b(1,3) = 133.873;
     b(0,4) = 220.295;b(1,4) = 123.873;
     b(0,5) = 205.295;b(1,5) = 123.873;
-    // b(0,3) = 2;b(1,3) = 2;b(2,3) = 1;
     std::cout << "Here is the right hand side b:\n" << b << std::endl;
-
+    b(2,0) = 1;b(2,1) = 1;b(2,2) = 1;
+    b(2,3) = 1;b(2,4) = 1;b(2,5) = 1;
     cout << endl; 
     cout << "******************************" << endl;
- 
-    MatrixXf x_jacobiSvd, x_colPivHouseholderQr;
- 
-    //jacobiSvd 方式:Slow (but fast for small matrices)
- 
-    // x_jacobiSvd = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
- 
-    // std::cout << "The least-squares solution is:\n"
-    //     << A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b) << std::endl;
-    std::cout << umeyama(A,b,true)<<std::endl;
+    MatrixXd X = b*pinv(A); 
+    std::cout <<"X: "<<X<<std::endl;
+
     cout << "******************************" << endl;
-    A(2,0)=1;A(2,1)=1;A(2,2)=1;A(2,3)=1;A(2,4)=1;A(2,5)=1;
-    b(2,0)=1;b(2,1)=1;b(2,2)=1;b(2,3)=1;b(2,4)=1;b(2,5)=1;
-    // std::cout <<b*A.inverse()<<std::endl;
-    std::cout <<b*pinv(A)<<std::endl;
+    MatrixXd A1(3,1);
+    A1(0,0) = 1490.168;A1(1,0) = 1067.822;
+    A1(2,0) = 1; 
+    cout << A1 <<endl;
     cout << "******************************" << endl;
-    // std::cout <<A.colPivHouseholderQr().solve(b)<<std::endl;
-    cout << endl;
-    // cout << "**********colPivHouseholderQr方法********************" << endl;
- 
-    // x_colPivHouseholderQr = A.colPivHouseholderQr().solve(b);
- 
-    // //colPivHouseholderQr方法:fast
-    // std::cout << "The least-squares solution is:\n"
-    //     << x_colPivHouseholderQr << std::endl;
- 
- 
-   
- 
+    cout << X*A1<<endl;
+    cout << endl;  
+
     system("pause");
  
     return 0;

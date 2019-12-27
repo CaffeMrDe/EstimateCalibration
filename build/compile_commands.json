@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/home/de/eigenWork/build",
-  "command": "/usr/bin/c++    -I/home/de/eigenWork/AFFIEN -I/usr/local/include/eigen3  -g   -o CMakeFiles/AFFIEN.dir/main.cpp.o -c /home/de/eigenWork/main.cpp",
-  "file": "/home/de/eigenWork/main.cpp"
-}
-]
