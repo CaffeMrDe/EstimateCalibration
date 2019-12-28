@@ -388,9 +388,8 @@ int main(){
     for(int j = 0;j < 17; j++){
         //A = XB XInv
         Eigen::Matrix4d A = W2E_list[j] *E2C;
-
-
         EstimeObjInCamera[j] = A.inverse()*ObjInEndM ;
+
         std::cout << "A "<<std::endl<<C2O_list[j]<<std::endl;
         std::cout << "EstimeObjInCamera "<<std::endl<<EstimeObjInCamera[j]<<std::endl;
         std::cout << "C2O "<<std::endl<<C2O_list[j]<<std::endl;
